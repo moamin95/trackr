@@ -48,6 +48,8 @@ const getProgressColor = (color?: string) => {
 export function GoalTracker({ goals }: { goals: Goal[] }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const goalsPerPage = 3;
   const totalPages = Math.ceil(goals.length / goalsPerPage);
 
@@ -68,6 +70,33 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
 
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentPage < totalPages - 1) {
+      handleNext();
+    }
+    if (isRightSwipe && currentPage > 0) {
+      handlePrevious();
+    }
+  };
+
   useEffect(() => {
     if (isTransitioning) {
       const timer = setTimeout(() => setIsTransitioning(false), 200);
@@ -78,7 +107,12 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Goals - Compact List with Pagination */}
-      <div className="flex flex-col gap-2 flex-1">
+      <div
+        className="flex flex-col gap-2 flex-1"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="flex flex-col gap-2 min-h-0">
           {displayedGoals.map((goal, index) => {
             const progress = (goal.currentAmount / goal.targetAmount) * 100;

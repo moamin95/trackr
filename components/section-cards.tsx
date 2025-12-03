@@ -198,7 +198,7 @@ export function SectionCards({ accounts }: { accounts: Account[] }) {
   const renderCard = (card: typeof cards[0]) => (
     <Card
       key={card.id}
-      className={`@container/card backdrop-blur-xl bg-white/60 dark:bg-card/60 border border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.15)] transition-all duration-300 bg-gradient-to-br ${card.gradient}`}
+      className={`@container/card backdrop-blur-xl bg-white/95 dark:bg-card/60 border border-gray-400/80 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.25)] transition-all duration-300 bg-gradient-to-br ${card.gradient}`}
     >
       <CardHeader>
         <CardDescription>{card.description}</CardDescription>
@@ -230,7 +230,7 @@ export function SectionCards({ accounts }: { accounts: Account[] }) {
   // Render skeleton for mobile
   const renderMobileSkeleton = () => (
     <div className="relative md:hidden">
-      <Card className="@container/card backdrop-blur-xl bg-white/60 dark:bg-card/60 border border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] bg-gradient-to-br from-green-500/10 via-transparent to-green-500/5">
+      <Card className="@container/card backdrop-blur-xl bg-white/95 dark:bg-card/60 border border-gray-400/80 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)] bg-gradient-to-br from-green-500/10 via-transparent to-green-500/5">
         <CardHeader>
           <Skeleton className="h-4 w-24 mb-2" />
           <Skeleton className="h-8 w-32 mb-4" />

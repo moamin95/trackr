@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
@@ -11,19 +13,28 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Wallet, Zap, ChevronRight, LayoutDashboard, Receipt } from "lucide-react";
 import Link from "next/link";
 
 export function AppSidebar() {
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
+              <a href="/" onClick={handleLinkClick}>
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Zap className="size-4" />
                 </div>
@@ -56,7 +67,7 @@ export function AppSidebar() {
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
-                          <Link href="/">
+                          <Link href="/" onClick={handleLinkClick}>
                             <LayoutDashboard />
                             <span>Overview</span>
                           </Link>
@@ -64,7 +75,7 @@ export function AppSidebar() {
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
-                          <Link href="/transactions">
+                          <Link href="/transactions" onClick={handleLinkClick}>
                             <Receipt />
                             <span>Transactions</span>
                           </Link>

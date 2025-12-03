@@ -27,6 +27,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
+import { Drawer } from "vaul";
 import { TransactionDetails } from "./transaction-details";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -239,7 +240,7 @@ export const DataTable = ({
 
     return (
         <div className="flex flex-col gap-4 min-h-[25vh] w-full">
-            <div className="overflow-hidden rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)] transition-all duration-300">
+            <div className="overflow-hidden rounded-lg border backdrop-blur-xl bg-white/95 dark:bg-card/60 border-gray-400/80 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.12)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.18)] transition-all duration-300">
                 <Table className="table-fixed">
                     <TableHeader className="bg-muted sticky top-0 z-10">
                         <TableRow>
@@ -358,25 +359,54 @@ export const DataTable = ({
                 />
             </div>
 
-            {/* Transaction Details Sheet */}
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetContent side={isMobile ? "bottom" : "right"} className={isMobile ? "h-[85vh]" : ""}>
-                    <SheetHeader>
-                        <SheetTitle>Transaction Details</SheetTitle>
-                        <SheetDescription>
-                            View complete information about this transaction
-                        </SheetDescription>
-                    </SheetHeader>
-                    {selectedTransaction && (
-                        <TransactionDetails
-                            transaction={selectedTransaction}
-                            account={accounts.find(
-                                (acc) => acc.id === selectedTransaction.accountId
-                            )}
-                        />
-                    )}
-                </SheetContent>
-            </Sheet>
+            {/* Transaction Details Sheet/Drawer */}
+            {isMobile ? (
+                <Drawer.Root open={sheetOpen} onOpenChange={setSheetOpen}>
+                    <Drawer.Portal>
+                        <Drawer.Overlay className="fixed inset-0 bg-black/40" />
+                        <Drawer.Content className="bg-background flex flex-col rounded-t-[10px] h-[65vh] mt-24 fixed bottom-0 left-0 right-0">
+                            <div className="p-4 bg-background rounded-t-[10px] flex-1 overflow-y-auto">
+                                <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-8" />
+                                <div className="max-w-md mx-auto">
+                                    <Drawer.Title className="font-semibold text-lg mb-2">
+                                        Transaction Details
+                                    </Drawer.Title>
+                                    <Drawer.Description className="text-sm text-muted-foreground mb-4">
+                                        View complete information about this transaction
+                                    </Drawer.Description>
+                                    {selectedTransaction && (
+                                        <TransactionDetails
+                                            transaction={selectedTransaction}
+                                            account={accounts.find(
+                                                (acc) => acc.id === selectedTransaction.accountId
+                                            )}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </Drawer.Content>
+                    </Drawer.Portal>
+                </Drawer.Root>
+            ) : (
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                    <SheetContent side="right">
+                        <SheetHeader>
+                            <SheetTitle>Transaction Details</SheetTitle>
+                            <SheetDescription>
+                                View complete information about this transaction
+                            </SheetDescription>
+                        </SheetHeader>
+                        {selectedTransaction && (
+                            <TransactionDetails
+                                transaction={selectedTransaction}
+                                account={accounts.find(
+                                    (acc) => acc.id === selectedTransaction.accountId
+                                )}
+                            />
+                        )}
+                    </SheetContent>
+                </Sheet>
+            )}
         </div>
     );
 };

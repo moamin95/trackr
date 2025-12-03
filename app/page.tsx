@@ -44,7 +44,7 @@ export default function Home() {
 
   return (
     <div className="@container/main flex flex-col h-full bg-sidebar md:p-4">
-      <div className="flex flex-col h-full bg-background border-0 md:border md:rounded-xl p-6 gap-4 relative overflow-hidden">
+      <div className="flex flex-col h-full bg-background border-0 md:border md:rounded-xl p-4 md:p-6 gap-4 relative overflow-hidden">
         {/* Background pattern for glass effect */}
         <div className="absolute inset-0 -z-10 opacity-[0.03] dark:opacity-[0.02]" style={{
           backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,

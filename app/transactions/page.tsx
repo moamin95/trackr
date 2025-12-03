@@ -109,8 +109,8 @@ export default function TransactionsPage() {
   }, [transactions, debouncedQuery]);
 
   return (
-    <div className="@container/main flex flex-col h-full bg-sidebar p-4">
-      <div className="flex flex-col h-full bg-background border rounded-xl p-6 gap-4 relative overflow-hidden">
+    <div className="@container/main flex flex-col h-full bg-sidebar md:p-4">
+      <div className="flex flex-col h-full bg-background border-0 md:border md:rounded-xl p-4 md:p-6 gap-4 relative overflow-hidden">
         {/* Background pattern for glass effect */}
         <div className="absolute inset-0 -z-10 opacity-[0.03] dark:opacity-[0.02]" style={{
           backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
@@ -130,7 +130,7 @@ export default function TransactionsPage() {
           <div className="flex justify-between items-center gap-4">
             <SearchInput searchQuery={searchQuery} onChange={setSearchQuery} />
             <div className="flex gap-2">
-              <div className="flex gap-1 border rounded-md p-1">
+              {/* <div className="flex gap-1 border rounded-md p-1">
                 <Sonner
                   variant={selectedPreset === "3months" ? "secondary" : "ghost"}
                   size="sm"
@@ -152,7 +152,7 @@ export default function TransactionsPage() {
                 >
                   1Y
                 </Sonner>
-              </div>
+              </div> */}
               <DateRangePicker
                 initialDateFrom={currentDateRange.from}
                 initialDateTo={currentDateRange.to}

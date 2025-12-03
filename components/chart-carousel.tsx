@@ -37,7 +37,7 @@ export function ChartCarousel({ transactions }: ChartCarouselProps) {
   }
 
   return (
-    <Card className="h-full flex flex-col gap-4 p-6 backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.15)] transition-all duration-300">
+    <Card className="h-full flex flex-col gap-4 p-6 backdrop-blur-xl bg-white/95 dark:bg-card/60 border-gray-400/80 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.25)] transition-all duration-300">
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">

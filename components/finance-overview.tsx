@@ -228,7 +228,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
                 <ChartCarousel transactions={filteredTransactions} />
               </div>
               {/* Goal Tracker */}
-              <div className="flex-1 rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)] transition-all duration-300 p-6 overflow-hidden">
+              <div className="flex-1 rounded-lg border backdrop-blur-xl bg-white/95 dark:bg-card/60 border-gray-400/80 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.12)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.18)] transition-all duration-300 p-6 overflow-hidden">
                 <GoalTracker goals={goals} />
               </div>
             </>
