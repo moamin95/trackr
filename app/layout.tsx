@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "trackr",
-  description: "One Stop Finance Manager",
+  description: "Your Favorite Finance Manager",
 };
 
 export default async function RootLayout({
