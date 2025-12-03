@@ -364,8 +364,8 @@ export const DataTable = ({
                 <Drawer.Root open={sheetOpen} onOpenChange={setSheetOpen}>
                     <Drawer.Portal>
                         <Drawer.Overlay className="fixed inset-0 bg-black/40" />
-                        <Drawer.Content className="bg-background flex flex-col rounded-t-[10px] h-[65vh] mt-24 fixed bottom-0 left-0 right-0">
-                            <div className="p-4 bg-background rounded-t-[10px] flex-1 overflow-y-auto">
+                        <Drawer.Content className="flex flex-col rounded-t-[10px] h-[75vh] mt-24 fixed bottom-0 left-0 right-0">
+                            <div className="p-4 bg-zinc-900 rounded-t-[10px] flex-1 overflow-y-auto">
                                 <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted mb-8" />
                                 <div className="max-w-md mx-auto">
                                     <Drawer.Title className="font-semibold text-lg mb-2">
@@ -389,7 +389,7 @@ export const DataTable = ({
                 </Drawer.Root>
             ) : (
                 <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                    <SheetContent side="right">
+                    <SheetContent side="right" className="bg-zinc-950">
                         <SheetHeader>
                             <SheetTitle>Transaction Details</SheetTitle>
                             <SheetDescription>

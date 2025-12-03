@@ -58,13 +58,15 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
     (currentPage + 1) * goalsPerPage
   );
 
-  const handlePrevious = () => {
+  const handlePrevious = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentPage((prev) => Math.max(0, prev - 1));
   };
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
@@ -79,6 +81,15 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStart !== null) {
+      const currentTouch = e.targetTouches[0].clientX;
+      const diff = touchStart - currentTouch;
+
+      // Prevent scroll if horizontal swipe is detected
+      if (Math.abs(diff) > 10) {
+        e.preventDefault();
+      }
+    }
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
@@ -108,10 +119,11 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
     <div className="flex flex-col gap-4 h-full">
       {/* Goals - Compact List with Pagination */}
       <div
-        className="flex flex-col gap-2 flex-1"
+        className="flex flex-col gap-2 flex-1 touch-pan-y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        style={{ touchAction: 'pan-y' }}
       >
         <div className="flex flex-col gap-2 min-h-0">
           {displayedGoals.map((goal, index) => {
@@ -178,7 +190,7 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handlePrevious}
+              onClick={(e) => handlePrevious(e)}
               disabled={currentPage === 0}
               className="h-8 w-8 p-0"
             >
@@ -190,7 +202,7 @@ export function GoalTracker({ goals }: { goals: Goal[] }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleNext}
+              onClick={(e) => handleNext(e)}
               disabled={currentPage === totalPages - 1}
               className="h-8 w-8 p-0"
             >
