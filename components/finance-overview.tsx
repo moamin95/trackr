@@ -138,7 +138,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       {loading || !filteredTransactions ? (
         <Skeleton className="h-10 w-full max-w-md ml-auto rounded-lg" />
       ) : (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-between md:justify-end  gap-2">
           <div className="flex gap-1 border rounded-md p-1">
             <Sonner
               variant={selectedPreset === "3months" ? "secondary" : "ghost"}
@@ -190,9 +190,9 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       )}
 
       {/* Table and Charts section */}
-      <div className="flex gap-6">
+      <div className="flex flex-col xl:flex-row gap-6">
         {/* Left side - Table (50%) */}
-        <div className="flex flex-col gap-4 w-1/2">
+        <div className="flex flex-col gap-4 w-full xl:w-1/2">
           {/* {loading || !filteredTransactions ? (
             <Skeleton className="h-10 w-full max-w-xs rounded-lg" />
           ) : (
@@ -216,7 +216,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
         </div>
 
         {/* Right side - Charts Carousel (50%) */}
-        <div className="flex flex-col gap-6 w-1/2">
+        <div className="flex flex-col gap-6 w-full xl:w-1/2">
           {loading || !filteredTransactions ? (
             <>
               <Skeleton className="h-[500px] w-full rounded-lg" />

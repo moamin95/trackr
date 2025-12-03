@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/chart"
 import type { Transaction } from "@/types"
 import { formatDate } from '@lib/utils'
+import { useIsMobile } from "@/hooks/use-mobile"
 
 const chartConfig = {
   income: {
@@ -44,6 +45,19 @@ export function ChartLineInteractive({ transactions, dates }: {
     initialDateTo: Date | undefined;
   }
 }) {
+  const isMobile = useIsMobile()
+  const [isSmallScreen, setIsSmallScreen] = React.useState(false)
+
+  React.useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth <= 425)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
   // Transform transactions into chart data grouped by date
   const chartData = React.useMemo(() => {
     if (!transactions.length) return [];
@@ -95,31 +109,39 @@ export function ChartLineInteractive({ transactions, dates }: {
 
   return (
     <Card className={`flex flex pt-0 min-h-[20vh] w-full backdrop-blur-xl bg-white/60 dark:bg-card/60 border border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.15)] transition-all duration-300 bg-gradient-to-br ${totals.income > totals.expense ? 'from-green-500/10 via-transparent to-green-500/5' : 'from-red-500/10 via-transparent to-red-500/5'}`}>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+      <CardHeader className="flex flex-col items-start gap-4 space-y-0 border-b py-5 lg:flex-row lg:items-center">
         <div className="grid flex-1 gap-1">
-          <CardTitle>Transaction Trends for {`${formatDate(dates.initialDateFrom, "en-US")}${dates.initialDateTo != null
-            ? " - " + formatDate(dates.initialDateTo, "en-US")
-            : ""
-            }`}</CardTitle>
+          <CardTitle>
+            {isSmallScreen ? "Transaction Trends" : `Transaction Trends for ${formatDate(dates.initialDateFrom, "en-US")}${dates.initialDateTo != null
+              ? " - " + formatDate(dates.initialDateTo, "en-US")
+              : ""
+              }`}
+          </CardTitle>
           <CardDescription>
-            Daily income and expenses over the selected period
+            {isSmallScreen
+              ? `${formatDate(dates.initialDateFrom, "en-US")}${dates.initialDateTo != null
+                ? " - " + formatDate(dates.initialDateTo, "en-US")
+                : ""
+                }`
+              : "Daily income and expenses over the selected period"
+            }
           </CardDescription>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="hidden lg:flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-4">
           <div className="flex flex-col gap-1">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground text-[10px]">
               {chartConfig.income.label}
             </span>
-            <span className="text-lg leading-none font-bold sm:text-2xl">
+            <span className="text-base leading-none font-bold sm:text-lg">
               ${totals.income.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
-          <div className="h-12 w-px bg-border shrink-0" />
+          <div className="h-px w-full bg-border lg:h-12 lg:w-px lg:shrink-0" />
           <div className="flex flex-col gap-1">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-muted-foreground text-[10px]">
               {chartConfig.expense.label}
             </span>
-            <span className="text-lg leading-none font-bold sm:text-2xl">
+            <span className="text-base leading-none font-bold sm:text-lg">
               ${totals.expense.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
@@ -179,13 +201,24 @@ export function ChartLineInteractive({ transactions, dates }: {
                 })
               }}
             />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              domain={[0, 'auto']}
-              tickFormatter={(value) => `$${value.toLocaleString()}`}
-            />
+            {!isMobile && (
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                domain={[0, 'auto']}
+                tickFormatter={(value) => `$${value.toLocaleString()}`}
+              />
+            )}
+            {isMobile && (
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                domain={[0, 'auto']}
+                width={0}
+                tick={false}
+              />
+            )}
             <ChartTooltip
               cursor={false}
               content={

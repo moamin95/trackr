@@ -280,7 +280,7 @@ export const DateRangePicker: FC<DateRangePickerProps> = ({
                   </Select> */}
                 </div>
               </div>
-              <div>
+              <div className="flex justify-center">
                 <Calendar
                   mode="range"
                   onSelect={(value: { from?: Date; to?: Date } | undefined) => {

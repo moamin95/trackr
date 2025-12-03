@@ -11,6 +11,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 type ChartRadarDotsProps = {
   transactions: Transaction[]
@@ -18,6 +19,7 @@ type ChartRadarDotsProps = {
 
 export function ChartRadarDots({ transactions }: ChartRadarDotsProps) {
   const [view, setView] = useState<"expenditures" | "income">("expenditures")
+  const isMobile = useIsMobile()
 
   const chartData = useMemo(() => {
     // Group by category and sum amounts
@@ -63,7 +65,7 @@ export function ChartRadarDots({ transactions }: ChartRadarDotsProps) {
     <div className="h-full w-full flex flex-col">
       <div className="items-center pb-4">
         <div className="flex items-center justify-between w-full">
-          <div>
+          <div className="min-h-[3.5rem] lg:min-h-0">
             <h3 className="text-lg font-semibold">Category Breakdown</h3>
             <p className="text-sm text-muted-foreground">
               Top {chartData.length} categories by {view}
@@ -76,7 +78,7 @@ export function ChartRadarDots({ transactions }: ChartRadarDotsProps) {
               onClick={() => setView("expenditures")}
               className="h-8 text-xs"
             >
-              Expenses
+              {isMobile ? <TrendingDown className="h-4 w-4" /> : "Expenses"}
             </Button>
             <Button
               variant={view === "income" ? "secondary" : "ghost"}
@@ -84,7 +86,7 @@ export function ChartRadarDots({ transactions }: ChartRadarDotsProps) {
               onClick={() => setView("income")}
               className="h-8 text-xs"
             >
-              Income
+              {isMobile ? <TrendingUp className="h-4 w-4" /> : "Income"}
             </Button>
           </div>
         </div>

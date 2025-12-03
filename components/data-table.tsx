@@ -28,6 +28,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { TransactionDetails } from "./transaction-details";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type SortConfig = {
     key: keyof Transaction | null;
@@ -45,6 +46,8 @@ export const DataTable = ({
     accounts: Account[];
     defaultViewPerPage?: number;
 }) => {
+    const isMobile = useIsMobile();
+
     const getStatusBadgeStyles = (status: TransactionStatus) => {
         switch (status) {
             case "Complete":
@@ -217,8 +220,6 @@ export const DataTable = ({
         setSelectedStatus(new Set(statusTypes));
     }
 
-    console.log({ pagedData });
-
     const getSortIcon = (key: string) => {
         if (sortConfig.key !== key) return <ArrowUpDown className="ml-2 h-4 w-4" />;
         if (sortConfig.direction === "asc") return <ArrowUp className="ml-2 h-4 w-4" />;
@@ -242,16 +243,18 @@ export const DataTable = ({
                 <Table className="table-fixed">
                     <TableHeader className="bg-muted sticky top-0 z-10">
                         <TableRow>
-                            <TableHead>
-                                <TableHeaderDropDownMenu
-                                    label="Bank"
-                                    items={bankAccounts}
-                                    selectedItems={selectedBanks}
-                                    onItemToggle={handleBankToggle}
-                                    onClearAll={handleClearAll}
-                                    onSelectAll={handleSelectAll}
-                                />
-                            </TableHead>
+                            {!isMobile && (
+                                <TableHead>
+                                    <TableHeaderDropDownMenu
+                                        label="Bank"
+                                        items={bankAccounts}
+                                        selectedItems={selectedBanks}
+                                        onItemToggle={handleBankToggle}
+                                        onClearAll={handleClearAll}
+                                        onSelectAll={handleSelectAll}
+                                    />
+                                </TableHead>
+                            )}
                             <TableHead>
                                 <Button
                                     variant="ghost"
@@ -263,17 +266,19 @@ export const DataTable = ({
                                 </Button>
                             </TableHead>
                             <TableHead>Description</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>
-                                <TableHeaderDropDownMenu
-                                    label="Status"
-                                    items={statusTypes}
-                                    selectedItems={selectedStatus}
-                                    onItemToggle={handleStatusToggle}
-                                    onClearAll={handleClearAllStatus}
-                                    onSelectAll={handleSelectAllStatus}
-                                />
-                            </TableHead>
+                            {!isMobile && <TableHead>Category</TableHead>}
+                            {!isMobile && (
+                                <TableHead>
+                                    <TableHeaderDropDownMenu
+                                        label="Status"
+                                        items={statusTypes}
+                                        selectedItems={selectedStatus}
+                                        onItemToggle={handleStatusToggle}
+                                        onClearAll={handleClearAllStatus}
+                                        onSelectAll={handleSelectAllStatus}
+                                    />
+                                </TableHead>
+                            )}
                             <TableHead className="text-right">
                                 <Button
                                     variant="ghost"
@@ -289,7 +294,7 @@ export const DataTable = ({
                     <TableBody>
                         {pagedData.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={isMobile ? 3 : 6} className="h-24 text-center">
                                     <div className="flex flex-col items-center gap-1 text-muted-foreground">
                                         <p className="font-medium">No transactions found</p>
                                         <p className="text-sm">Try adjusting your search or filters</p>
@@ -303,27 +308,31 @@ export const DataTable = ({
                                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                                     onClick={() => handleRowClick(t)}
                                 >
-                                    <TableCell className="font-medium truncate">{accountMap.get(t.accountId)}</TableCell>
+                                    {!isMobile && <TableCell className="font-medium truncate">{accountMap.get(t.accountId)}</TableCell>}
                                     <TableCell>
                                         {new Date(t.date).toLocaleDateString("en-US", {
                                             month: 'short',
                                             day: 'numeric',
-                                            year: 'numeric'
+                                            year: isMobile ? undefined : 'numeric'
                                         })}
                                     </TableCell>
                                     <TableCell className="truncate">{t.description}</TableCell>
-                                    <TableCell className="truncate">
-                                        {t.category}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge
-                                            variant="outline"
-                                            className={cn("w-24 justify-start gap-1.5 text-xs", getStatusBadgeStyles(t.status))}
-                                        >
-                                            <span className={cn("size-2 rounded-full", getStatusDotColor(t.status))} />
-                                            {t.status}
-                                        </Badge>
-                                    </TableCell>
+                                    {!isMobile && (
+                                        <TableCell className="truncate">
+                                            {t.category}
+                                        </TableCell>
+                                    )}
+                                    {!isMobile && (
+                                        <TableCell>
+                                            <Badge
+                                                variant="outline"
+                                                className={cn("w-24 justify-start gap-1.5 text-xs", getStatusBadgeStyles(t.status))}
+                                            >
+                                                <span className={cn("size-2 rounded-full", getStatusDotColor(t.status))} />
+                                                {t.status}
+                                            </Badge>
+                                        </TableCell>
+                                    )}
                                     <TableCell
                                         className={cn(
                                             "text-right font-medium tabular-nums",
@@ -338,25 +347,20 @@ export const DataTable = ({
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-end 2xl:justify-between px-2">
-                <div className="hidden 2xl:block text-sm text-muted-foreground">
-                    {pagedData.length} of {sortedData.length} row(s) shown
-                </div>
-                <div className="flex items-center gap-6">
-                    <SelectWrapper onChange={handlePageLimitClick} />
-                    <PaginationWrapper
-                        totalPages={totalPages}
-                        currentPage={page}
-                        onNext={handleNext}
-                        onPrevious={handlePrevious}
-                        onPageClick={handlePageClick}
-                    />
-                </div>
+            <div className="flex items-center justify-between px-2">
+                <SelectWrapper onChange={handlePageLimitClick} />
+                <PaginationWrapper
+                    totalPages={totalPages}
+                    currentPage={page}
+                    onNext={handleNext}
+                    onPrevious={handlePrevious}
+                    onPageClick={handlePageClick}
+                />
             </div>
 
             {/* Transaction Details Sheet */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                <SheetContent>
+                <SheetContent side={isMobile ? "bottom" : "right"} className={isMobile ? "h-[85vh]" : ""}>
                     <SheetHeader>
                         <SheetTitle>Transaction Details</SheetTitle>
                         <SheetDescription>
