@@ -21,6 +21,8 @@ export type AccountType =
 
   export type TransactionStatus = "Complete" | "Pending" | "Canceled" | "Declined";
 
+  export type TransferType = "ACH" | "Wire" | "Check" | "Debit Card" | "Credit Card" | "Cash" | "Mobile Payment" | "Direct Deposit";
+
   export type Transaction = {
     id: number;
     accountId: number;
@@ -29,5 +31,25 @@ export type AccountType =
     category: string;
     amount: number;
     status: TransactionStatus;
+    transferType: TransferType;
+    destination?: string;
+    payee?: string;
+    notes?: string;
+  };
+
+  export type GoalType = "Savings" | "Spending Limit" | "Debt Payoff" | "Investment";
+
+  export type Goal = {
+    id: number;
+    name: string;
+    type: GoalType;
+    targetAmount: number;
+    currentAmount: number;
+    deadline?: string;
+    category?: string; // For tracking specific categories
+    accountId?: number; // For account-specific goals
+    icon?: string;
+    color?: string;
+    featured?: boolean;
   };
 

@@ -1,16 +1,13 @@
-import { ReactNode, useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
-    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type {
     DataType,
@@ -23,6 +20,14 @@ import { PaginationWrapper } from "./pagination";
 import { SelectWrapper } from "./select";
 import { TableHeaderDropDownMenu } from "./table-header-drop";
 import { cn } from "@/lib/utils";
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
+import { TransactionDetails } from "./transaction-details";
 
 type SortConfig = {
     key: keyof Transaction | null;
@@ -33,10 +38,12 @@ export const DataTable = ({
     dataType,
     data,
     accounts,
+    defaultViewPerPage
 }: {
     dataType: DataType;
     data: Transaction[];
     accounts: Account[];
+    defaultViewPerPage?: number;
 }) => {
     const getStatusBadgeStyles = (status: TransactionStatus) => {
         switch (status) {
@@ -69,14 +76,16 @@ export const DataTable = ({
     };
 
     const [page, setPage] = useState(1);
-    const [viewPerPage, setViewPerPage] = useState(25);
+    const [viewPerPage, setViewPerPage] = useState(defaultViewPerPage || 25);
     const [sortConfig, setSortConfig] = useState<SortConfig>({
         key: "date",
         direction: "desc",
     });
     const [selectedBanks, setSelectedBanks] = useState<Set<string>>(new Set());
     const [selectedStatus, setSelectedStatus] = useState<Set<string>>(new Set());
-    
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
+
     const accountMap = new Map();
 
     for (let account of accounts) {
@@ -152,7 +161,10 @@ export const DataTable = ({
         return new Set(data.map((transaction) => transaction.status))
     }, [data])
 
-    console.log(statusTypes, "....");
+    useEffect(() => {
+        if (bankAccounts) setSelectedBanks(bankAccounts);
+        if (statusTypes) setSelectedStatus(statusTypes);
+    }, [bankAccounts, statusTypes])
 
     const handleSort = (key: keyof Transaction) => {
         setSortConfig((prev) => {
@@ -219,9 +231,14 @@ export const DataTable = ({
     const handlePageClick = (pageNum: number) => setPage(pageNum);
     const handlePageLimitClick = (pageLimit: number) => setViewPerPage(pageLimit);
 
+    const handleRowClick = (transaction: Transaction) => {
+        setSelectedTransaction(transaction);
+        setSheetOpen(true);
+    };
+
     return (
         <div className="flex flex-col gap-4 min-h-[25vh] w-full">
-            <div className="overflow-hidden rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.15)] transition-all duration-300">
+            <div className="overflow-hidden rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)] transition-all duration-300">
                 <Table className="table-fixed">
                     <TableHeader className="bg-muted sticky top-0 z-10">
                         <TableRow>
@@ -281,8 +298,12 @@ export const DataTable = ({
                             </TableRow>
                         ) : (
                             pagedData.map((t) => (
-                                <TableRow key={t.id}>
-                                    <TableCell className="font-medium">{accountMap.get(t.accountId)}</TableCell>
+                                <TableRow
+                                    key={t.id}
+                                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                    onClick={() => handleRowClick(t)}
+                                >
+                                    <TableCell className="font-medium truncate">{accountMap.get(t.accountId)}</TableCell>
                                     <TableCell>
                                         {new Date(t.date).toLocaleDateString("en-US", {
                                             month: 'short',
@@ -317,8 +338,8 @@ export const DataTable = ({
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-between px-2">
-                <div className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-end 2xl:justify-between px-2">
+                <div className="hidden 2xl:block text-sm text-muted-foreground">
                     {pagedData.length} of {sortedData.length} row(s) shown
                 </div>
                 <div className="flex items-center gap-6">
@@ -332,6 +353,26 @@ export const DataTable = ({
                     />
                 </div>
             </div>
+
+            {/* Transaction Details Sheet */}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetContent>
+                    <SheetHeader>
+                        <SheetTitle>Transaction Details</SheetTitle>
+                        <SheetDescription>
+                            View complete information about this transaction
+                        </SheetDescription>
+                    </SheetHeader>
+                    {selectedTransaction && (
+                        <TransactionDetails
+                            transaction={selectedTransaction}
+                            account={accounts.find(
+                                (acc) => acc.id === selectedTransaction.accountId
+                            )}
+                        />
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

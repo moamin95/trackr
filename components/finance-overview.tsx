@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { DateRangePicker } from "@/components/date-range";
 import { DataTable } from "@components/data-table";
-import type { Account, DataType, Transaction } from "@/types";
+import type { Account, DataType, Transaction, Goal } from "@/types";
 import { SpinnerColor } from "./spinner-load";
 import { SearchInput, useDebounce } from "@components/search-input";
 import { ChartLineInteractive } from "./line-chart";
-import { Button } from "./ui/button";
 import { formatDate } from "@lib/utils"
+import { Sonner } from "./sonner-popup";
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChartCarousel } from "./chart-carousel";
+import { GoalTracker } from "./goal-tracker";
+import { Search } from "lucide-react";
 
 type DatePreset = "3months" | "6months" | "1year" | "custom";
 
@@ -17,6 +19,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
   const [selectedPreset, setSelectedPreset] = useState<DatePreset>("3months");
   const [dataType, setDataType] = useState<DataType>("Transactions");
   const [allTransactions, setAllTransactions] = useState<Transaction[] | null>(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [tableSkeletonHeight, setTableSkeletonHeight] = useState<number>(300);
@@ -58,21 +61,31 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
     setSelectedPreset(preset);
   };
 
-  // Fetch 1 year of data once on mount
+  // Fetch 1 year of data and goals once on mount
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const to = new Date();
         const from = new Date();
         from.setFullYear(from.getFullYear() - 1);
 
-        const res = await fetch(
+        // Fetch transactions
+        const transactionsRes = await fetch(
           `/api/transactions?startDate=${from.toISOString()}&endDate=${to.toISOString()}`
         );
-        if (!res) throw new Error("Failed to fetch transactions...");
-        const json = await res.json();
-        setAllTransactions(json);
+        if (!transactionsRes) throw new Error("Failed to fetch transactions...");
+        const transactionsJson = await transactionsRes.json();
+        setAllTransactions(transactionsJson);
+
+        // Fetch goals
+        const goalsRes = await fetch(
+          `/api/goals?startDate=${from.toISOString()}&endDate=${to.toISOString()}`
+        );
+        if (goalsRes.ok) {
+          const goalsJson = await goalsRes.json();
+          setGoals(goalsJson);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -80,7 +93,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       }
     };
 
-    fetchTransactions();
+    fetchData();
   }, []); // Only run once on mount
 
   // Filter transactions by selected date range (client-side)
@@ -127,27 +140,27 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       ) : (
         <div className="flex justify-end gap-2">
           <div className="flex gap-1 border rounded-md p-1">
-            <Button
+            <Sonner
               variant={selectedPreset === "3months" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => handlePresetClick("3months")}
+              changeTimeHandler={() => handlePresetClick("3months")}
             >
               3M
-            </Button>
-            <Button
+            </Sonner>
+            <Sonner
               variant={selectedPreset === "6months" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => handlePresetClick("6months")}
+              changeTimeHandler={() => handlePresetClick("6months")}
             >
               6M
-            </Button>
-            <Button
+            </Sonner>
+            <Sonner
               variant={selectedPreset === "1year" ? "secondary" : "ghost"}
               size="sm"
-              onClick={() => handlePresetClick("1year")}
+              changeTimeHandler={() => handlePresetClick("1year")}
             >
               1Y
-            </Button>
+            </Sonner>
           </div>
           <DateRangePicker
             initialDateFrom={currentDateRange.from}
@@ -180,14 +193,14 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       <div className="flex gap-6">
         {/* Left side - Table (50%) */}
         <div className="flex flex-col gap-4 w-1/2">
-          {loading || !filteredTransactions ? (
+          {/* {loading || !filteredTransactions ? (
             <Skeleton className="h-10 w-full max-w-xs rounded-lg" />
           ) : (
             <div className="flex justify-between items-center gap-4">
-              <h3 className="text-lg font-semibold">Transactions</h3>
+              <h3 className="text-lg font-semibold"><Search/></h3>
               <SearchInput searchQuery={searchQuery} onChange={setSearchQuery} />
             </div>
-          )}
+          )} */}
 
           <div ref={tableContainerRef}>
             {loading || !filteredTransactions ? (
@@ -211,12 +224,12 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
             </>
           ) : (
             <>
-              <div className="h-[500px]">
+              <div className="h-[600px]">
                 <ChartCarousel transactions={filteredTransactions} />
               </div>
-              {/* TODO: Add additional component here */}
-              <div className="flex-1 rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.1)] hover:shadow-[0px_12px_48px_0px_rgba(0,0,0,0.15)] transition-all duration-300 flex items-center justify-center text-muted-foreground p-6">
-                Additional Component Placeholder
+              {/* Goal Tracker */}
+              <div className="flex-1 rounded-lg border backdrop-blur-xl bg-white/60 dark:bg-card/60 border-gray-300/60 dark:border-white/20 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.08)] hover:shadow-[0px_4px_12px_0px_rgba(0,0,0,0.12)] transition-all duration-300 p-6 overflow-hidden">
+                <GoalTracker goals={goals} />
               </div>
             </>
           )}

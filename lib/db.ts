@@ -1,6 +1,6 @@
 // lib/db.ts
 import { faker } from "@faker-js/faker";
-import { Account, AccountType, Transaction, TransactionStatus } from "@/types";
+import { Account, AccountType, Transaction, TransactionStatus, TransferType, Goal } from "@/types";
 
 const ACCOUNT_TEMPLATES: Array<{ bank: string; accountType: AccountType }> = [
   { accountType: "Checking", bank: "CitiBank" },
@@ -33,8 +33,11 @@ const CATEGORIES = [
 
 const STATUSES: TransactionStatus[] = ["Complete", "Pending", "Canceled", "Declined"];
 
+const TRANSFER_TYPES: TransferType[] = ["ACH", "Wire", "Check", "Debit Card", "Credit Card", "Cash", "Mobile Payment", "Direct Deposit"];
+
 const accounts: Account[] = [];
 const transactions: Transaction[] = [];
+const goals: Goal[] = [];
 const TX_PER_ACCOUNT = 100;
 
 let nextAccountId = 1;
@@ -103,6 +106,18 @@ for (const template of ACCOUNT_TEMPLATES) {
       { weight: 2, value: "Declined" as TransactionStatus },
     ]);
 
+    // Determine transfer type based on account type and category
+    const transferType: TransferType = (() => {
+      if (category === "Salary") return "Direct Deposit";
+      if (template.accountType === "Credit Card") return "Credit Card";
+      if (template.accountType === "Checking" || template.accountType === "Savings") {
+        return faker.helpers.arrayElement(["ACH", "Debit Card", "Check", "Mobile Payment"]);
+      }
+      if (template.accountType === "Mortgage") return "ACH";
+      if (["Investment", "Roth IRA", "401k"].includes(template.accountType)) return "Wire";
+      return faker.helpers.arrayElement(TRANSFER_TYPES);
+    })();
+
     transactions.push({
       id: nextTxId++,
       accountId,
@@ -147,10 +162,92 @@ for (const template of ACCOUNT_TEMPLATES) {
           return Number(faker.finance.amount({ min: -5000, max: 5000 }));
         return Number(faker.finance.amount({ min: -500, max: 5000 }));
       })(),
-
+      transferType,
+      destination: faker.helpers.maybe(() => {
+        if (transferType === "Wire" || transferType === "ACH") {
+          return `${faker.finance.accountName()} - ${faker.finance.routingNumber()}`;
+        }
+        if (transferType === "Check") {
+          return `Check #${faker.string.numeric(4)}`;
+        }
+        return undefined;
+      }, { probability: 0.4 }),
+      payee: faker.helpers.maybe(() => faker.person.fullName(), { probability: 0.6 }),
+      notes: faker.helpers.maybe(() => {
+        const noteTemplates = [
+          faker.lorem.sentence(),
+          `Reference: ${faker.string.alphanumeric(10).toUpperCase()}`,
+          `Confirmation: ${faker.string.uuid()}`,
+          faker.company.catchPhrase(),
+        ];
+        return faker.helpers.arrayElement(noteTemplates);
+      }, { probability: 0.3 }),
     });
   }
 }
+
+// Create mock goals
+goals.push(
+  {
+    id: 1,
+    name: "Emergency Fund",
+    type: "Savings",
+    targetAmount: 10000,
+    currentAmount: 0, // Will be calculated from transactions
+    deadline: new Date(2026, 11, 31).toISOString(),
+    category: "Savings",
+    color: "blue",
+    featured: true,
+  },
+  {
+    id: 2,
+    name: "Vacation Fund",
+    type: "Savings",
+    targetAmount: 5000,
+    currentAmount: 0,
+    deadline: new Date(2025, 5, 1).toISOString(),
+    category: "Savings",
+    color: "purple",
+  },
+  {
+    id: 3,
+    name: "Dining Budget",
+    type: "Spending Limit",
+    targetAmount: 500,
+    currentAmount: 0, // Will track monthly spending
+    category: "Dining",
+    color: "orange",
+  },
+  {
+    id: 4,
+    name: "Mortgage Payoff",
+    type: "Debt Payoff",
+    targetAmount: 450000,
+    currentAmount: 0, // Will calculate from mortgage payments
+    deadline: new Date(2045, 11, 31).toISOString(),
+    accountId: accounts.find(a => a.accountType === "Mortgage")?.id,
+    color: "green",
+  },
+  {
+    id: 5,
+    name: "Investment Growth",
+    type: "Investment",
+    targetAmount: 50000,
+    currentAmount: 0,
+    deadline: new Date(2030, 11, 31).toISOString(),
+    accountId: accounts.find(a => a.accountType === "Investment")?.id,
+    color: "teal",
+  },
+  {
+    id: 6,
+    name: "Entertainment Budget",
+    type: "Spending Limit",
+    targetAmount: 300,
+    currentAmount: 0,
+    category: "Entertainment",
+    color: "pink",
+  }
+);
 
 // Rest of your DB helper functions remain the same
 export function getAccounts(opts?: {
@@ -202,4 +299,67 @@ export function getTransactions(opts: {
     pageSize,
     data: list.slice((page - 1) * pageSize, page * pageSize),
   };
+}
+
+export function getGoalsWithProgress(opts?: {
+  startDate?: Date;
+  endDate?: Date;
+}): Goal[] {
+  const now = new Date();
+  const startDate = opts?.startDate || new Date(now.getFullYear(), now.getMonth(), 1);
+  const endDate = opts?.endDate || now;
+
+  return goals.map((goal) => {
+    let currentAmount = 0;
+
+    // Filter transactions based on date range
+    const relevantTransactions = transactions.filter((t) => {
+      const tDate = new Date(t.date);
+      return tDate >= startDate && tDate <= endDate;
+    });
+
+    switch (goal.type) {
+      case "Savings":
+        // Sum positive transactions in savings category or account
+        currentAmount = relevantTransactions
+          .filter((t) => {
+            if (goal.accountId) return t.accountId === goal.accountId && t.amount > 0;
+            if (goal.category) return t.category === goal.category && t.amount > 0;
+            return false;
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+        break;
+
+      case "Spending Limit":
+        // Sum negative transactions (spending) in the category
+        currentAmount = Math.abs(
+          relevantTransactions
+            .filter((t) => goal.category && t.category === goal.category && t.amount < 0)
+            .reduce((sum, t) => sum + t.amount, 0)
+        );
+        break;
+
+      case "Debt Payoff":
+        // Sum debt payments (negative amounts on debt accounts)
+        currentAmount = Math.abs(
+          relevantTransactions
+            .filter((t) => goal.accountId && t.accountId === goal.accountId && t.amount < 0)
+            .reduce((sum, t) => sum + t.amount, 0)
+        );
+        break;
+
+      case "Investment":
+        // Track investment account balance growth
+        const investmentAccount = accounts.find((a) => a.id === goal.accountId);
+        if (investmentAccount) {
+          currentAmount = investmentAccount.balance;
+        }
+        break;
+    }
+
+    return {
+      ...goal,
+      currentAmount,
+    };
+  });
 }
