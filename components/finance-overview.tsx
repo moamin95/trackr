@@ -1,26 +1,20 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { DateRangePicker } from "@/components/date-range";
 import { DataTable } from "@components/data-table";
-import type { Account, DataType, Transaction, Goal } from "@/types";
-import { SpinnerColor } from "./spinner-load";
+import type { Account, DataType } from "@/types";
 import { SearchInput, useDebounce } from "@components/search-input";
 import { ChartLineInteractive } from "./line-chart";
-import { formatDate } from "@lib/utils"
 import { Sonner } from "./sonner-popup";
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChartCarousel } from "./chart-carousel";
 import { GoalTracker } from "./goal-tracker";
-import { Search } from "lucide-react";
+import { useTransactions, useGoals } from "@/hooks/use-queries";
 
 type DatePreset = "3months" | "6months" | "1year" | "custom";
 
 export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
-  const today = new Date();
   const [selectedPreset, setSelectedPreset] = useState<DatePreset>("3months");
   const [dataType, setDataType] = useState<DataType>("Transactions");
-  const [allTransactions, setAllTransactions] = useState<Transaction[] | null>(null);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [tableSkeletonHeight, setTableSkeletonHeight] = useState<number>(300);
 
@@ -61,45 +55,20 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
     setSelectedPreset(preset);
   };
 
-  // Fetch 1 year of data and goals once on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const to = new Date();
-        const from = new Date();
-        from.setFullYear(from.getFullYear() - 1);
+  // Fetch 1 year of data and goals
+  const oneYearAgo = useMemo(() => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1);
+    return date;
+  }, []);
 
-        // Fetch transactions
-        const transactionsRes = await fetch(
-          `/api/transactions?startDate=${from.toISOString()}&endDate=${to.toISOString()}`
-        );
-        if (!transactionsRes) throw new Error("Failed to fetch transactions...");
-        const transactionsJson = await transactionsRes.json();
-        setAllTransactions(transactionsJson);
+  const today = useMemo(() => new Date(), []);
 
-        // Fetch goals
-        const goalsRes = await fetch(
-          `/api/goals?startDate=${from.toISOString()}&endDate=${to.toISOString()}`
-        );
-        if (goalsRes.ok) {
-          const goalsJson = await goalsRes.json();
-          setGoals(goalsJson);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []); // Only run once on mount
+  const { data: allTransactions = [], isLoading: loading } = useTransactions(oneYearAgo, today);
+  const { data: goals = [] } = useGoals(oneYearAgo, today);
 
   // Filter transactions by selected date range (client-side)
   const transactions = useMemo(() => {
-    if (!allTransactions) return null;
-
     return allTransactions.filter((t) => {
       const transactionDate = new Date(t.date);
       const to = currentDateRange.to || new Date();
@@ -109,7 +78,6 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
   }, [allTransactions, currentDateRange]);
 
   const filteredTransactions = useMemo(() => {
-    if (!transactions) return null;
     if (!debouncedQuery || debouncedQuery === "") return transactions;
 
     return transactions.filter((t) =>
@@ -130,12 +98,12 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
     calculateTableHeight();
     window.addEventListener('resize', calculateTableHeight);
     return () => window.removeEventListener('resize', calculateTableHeight);
-  }, [loading, filteredTransactions]);
+  }, [loading, filteredTransactions.length]);
 
   return (
     <div className="flex flex-col gap-6">
       {/* Global date filter */}
-      {loading || !filteredTransactions ? (
+      {loading ? (
         <Skeleton className="h-10 w-full max-w-md ml-auto rounded-lg" />
       ) : (
         <div className="flex justify-between md:justify-end  gap-2">
@@ -177,7 +145,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
       )}
 
       {/* Chart section */}
-      {loading || !filteredTransactions ? (
+      {loading ? (
         <Skeleton className="h-[450px] w-full rounded-lg" />
       ) : (
         <ChartLineInteractive
@@ -203,7 +171,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
           )} */}
 
           <div ref={tableContainerRef}>
-            {loading || !filteredTransactions ? (
+            {loading ? (
               <Skeleton className="w-full rounded-lg" style={{ height: `${tableSkeletonHeight}px` }} />
             ) : (
               <DataTable
@@ -217,7 +185,7 @@ export const FinanceOverview = ({ accounts }: { accounts: Account[] }) => {
 
         {/* Right side - Charts Carousel (50%) */}
         <div className="flex flex-col gap-6 w-full xl:w-1/2">
-          {loading || !filteredTransactions ? (
+          {loading ? (
             <>
               <Skeleton className="h-[500px] w-full rounded-lg" />
               <Skeleton className="flex-1 w-full rounded-lg" />

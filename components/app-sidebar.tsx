@@ -58,8 +58,8 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton tooltip="Finances">
-                      <Wallet />
-                      <span>Finances</span>
+                      <Wallet className="size-6" />
+                      <span className="text-lg">Finances</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
@@ -68,16 +68,16 @@ export function AppSidebar() {
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <Link href="/" onClick={handleLinkClick}>
-                            <LayoutDashboard />
-                            <span>Overview</span>
+                            <LayoutDashboard className="size-6" />
+                            <span className="text-lg">Overview</span>
                           </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <Link href="/transactions" onClick={handleLinkClick}>
-                            <Receipt />
-                            <span>Transactions</span>
+                            <Receipt className="size-6" />
+                            <span className="text-lg">Transactions</span>
                           </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>

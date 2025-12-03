@@ -1,21 +1,18 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { DateRangePicker } from "@/components/date-range";
 import { DataTable } from "@/components/data-table";
-import type { Account, DataType, Transaction } from "@/types";
+import type { DataType } from "@/types";
 import { SearchInput, useDebounce } from "@/components/search-input";
-import { Sonner } from "@/components/sonner-popup";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/site-header";
+import { useAccounts, useTransactions } from "@/hooks/use-queries";
 
 type DatePreset = "3months" | "6months" | "1year" | "custom";
 
 export default function TransactionsPage() {
   const [selectedPreset, setSelectedPreset] = useState<DatePreset>("3months");
   const [dataType, setDataType] = useState<DataType>("Transactions");
-  const [allTransactions, setAllTransactions] = useState<Transaction[] | null>(null);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const debouncedQuery = useDebounce(searchQuery, 0);
@@ -54,43 +51,21 @@ export default function TransactionsPage() {
     setSelectedPreset(preset);
   };
 
-  // Fetch accounts and 1 year of transactions on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch accounts
-        const accountsRes = await fetch("/api/accounts");
-        const accountsData = await accountsRes.json();
-        setAccounts(accountsData.data);
-
-        // Fetch 1 year of transactions
-        const to = new Date();
-        const from = new Date();
-        from.setFullYear(from.getFullYear() - 1);
-
-        const transactionsRes = await fetch(
-          `/api/transactions?startDate=${from.toISOString()}&endDate=${to.toISOString()}`
-        );
-        if (!transactionsRes) throw new Error("Failed to fetch transactions...");
-        const transactionsJson = await transactionsRes.json();
-        console.log(transactionsJson, "/..")
-        setAllTransactions(transactionsJson);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  // Fetch 1 year of transactions
+  const oneYearAgo = useMemo(() => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1);
+    return date;
   }, []);
+
+  const today = useMemo(() => new Date(), []);
+
+  // Fetch accounts and 1 year of transactions
+  const { data: accounts = [] } = useAccounts();
+  const { data: allTransactions = [], isLoading: loading } = useTransactions(oneYearAgo, today);
 
   // Filter transactions by selected date range (client-side)
   const transactions = useMemo(() => {
-    if (!allTransactions) return null;
-
     return allTransactions.filter((t) => {
       const transactionDate = new Date(t.date);
       const to = currentDateRange.to || new Date();
@@ -100,7 +75,6 @@ export default function TransactionsPage() {
   }, [allTransactions, currentDateRange]);
 
   const filteredTransactions = useMemo(() => {
-    if (!transactions) return null;
     if (!debouncedQuery || debouncedQuery === "") return transactions;
 
     return transactions.filter((t) =>
@@ -121,10 +95,10 @@ export default function TransactionsPage() {
         <SiteHeader title="Transactions" />
 
         {/* Date filter and search */}
-        {loading || !filteredTransactions ? (
-          <div className="flex justify-between items-center gap-4">
-            <Skeleton className="h-10 w-64 rounded-lg" />
-            <Skeleton className="h-10 w-full max-w-md ml-auto rounded-lg" />
+        {loading ? (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <Skeleton className="h-10 w-full sm:w-80 rounded-lg" />
+            <Skeleton className="h-10 w-full sm:w-64 rounded-lg" />
           </div>
         ) : (
           <div className="flex justify-between items-center gap-4">
@@ -170,8 +144,45 @@ export default function TransactionsPage() {
 
         {/* Data Table */}
         <div className="flex-1 overflow-hidden">
-          {loading || !filteredTransactions ? (
-            <Skeleton className="w-full h-full rounded-lg" />
+          {loading ? (
+            <div className="w-full h-full rounded-lg border bg-card/60 backdrop-blur-xl p-4 space-y-4">
+              {/* Table Header Skeleton */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-32 flex-1" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+
+              {/* Table Rows Skeleton */}
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 py-3">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full max-w-xs" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+
+              {/* Pagination Skeleton */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Skeleton className="h-8 w-32" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                </div>
+                <Skeleton className="h-8 w-32" />
+              </div>
+            </div>
           ) : (
             <DataTable
               dataType={dataType}

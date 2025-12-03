@@ -209,7 +209,7 @@ export function SectionCards({ accounts }: { accounts: Account[] }) {
         >
           {card.isPercentage
             ? `${card.value}%`
-            : formattedAsDollars(card.value)}
+            : formattedAsDollars(typeof card.value === "number" ? card.value : parseFloat(card.value))}
         </CardTitle>
         <CardAction>
           <Badge variant={card.badge.variant}>

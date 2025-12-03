@@ -3,9 +3,10 @@
 <div align="center">
 
   ![trackr](https://img.shields.io/badge/trackr-Enterprise-ef4444?style=for-the-badge)
-  ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
+  ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
   ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
-  ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38bdf8?style=for-the-badge&logo=tailwind-css)
+  ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38bdf8?style=for-the-badge&logo=tailwind-css)
+  ![TanStack Query](https://img.shields.io/badge/TanStack_Query-5-ff4154?style=for-the-badge&logo=react-query)
 
   **A sleek, modern finance tracking application built with cutting-edge web technologies**
 
@@ -76,15 +77,16 @@
 ## 🛠️ Technology Stack
 
 ### Frontend Framework
-- **Next.js 15** - React framework with App Router
+- **Next.js 16** - React framework with App Router and Turbopack
 - **React 19** - Latest React with concurrent features
-- **TypeScript** - Type-safe development
+- **TypeScript 5** - Type-safe development
 
 ### Styling & UI
-- **Tailwind CSS** - Utility-first CSS framework
+- **Tailwind CSS 4** - Utility-first CSS framework
 - **shadcn/ui** - Beautiful, accessible component library
 - **Radix UI** - Unstyled, accessible primitives
 - **Lucide React** - Consistent icon system
+- **Tabler Icons** - Additional icon set
 
 ### Data Visualization
 - **Recharts** - Composable charting library
@@ -93,7 +95,13 @@
   - Radar charts for category analysis
   - Responsive chart carousel
 
-### State Management & Performance
+### State Management & Data Fetching
+- **TanStack Query (React Query)** - Powerful data synchronization and caching
+  - Automatic background refetching
+  - Smart query deduplication
+  - Built-in loading and error states
+  - Optimistic updates ready
+  - 1-minute stale time, 5-minute cache time
 - **React Hooks** - Modern state management
 - **useMemo** - Optimized computations
 - **useDebounce** - Performance-optimized search
@@ -109,17 +117,25 @@
 ## ⚡ Performance Optimizations
 
 ### 🎯 Smart Data Management
-1. **Single Fetch Strategy**: Load 1 year of data once, filter client-side
-   - Eliminates redundant API calls
+1. **TanStack Query Caching**: Intelligent data synchronization with automatic caching
+   - **Query Deduplication**: Multiple components requesting the same data share a single query
+   - **Smart Background Refetching**: Data stays fresh with automatic updates
+   - **Stale-While-Revalidate**: Show cached data instantly while fetching updates
+   - **1-minute Stale Time**: Data is considered fresh for 1 minute, eliminating redundant requests
+   - **5-minute Garbage Collection**: Unused cached data is cleaned up automatically
+   - **Optimized Network Usage**: Dramatically reduces API calls across the application
+
+2. **Single Fetch Strategy**: Load 1 year of data once, filter client-side
+   - Eliminates redundant API calls when changing date ranges
    - Instant filter/date range updates
    - Reduced server load
 
-2. **Memoized Computations**:
+3. **Memoized Computations**:
    - Transaction filtering cached with `useMemo`
    - Goal progress calculations optimized
    - Prevents unnecessary re-renders
 
-3. **Debounced Search**:
+4. **Debounced Search**:
    - Search input debounced to reduce filter operations
    - Smooth typing experience
    - Optimized re-render cycles
@@ -167,14 +183,19 @@ trackr/
 │   │   ├── sheet.tsx              # Drawer component
 │   │   ├── progress.tsx           # Progress bars
 │   │   ├── button.tsx             # Button variants
+│   │   ├── skeleton.tsx           # Loading skeletons
 │   │   ├── sonner.tsx             # Toast notifications
 │   │   └── ...
+│   ├── query-provider.tsx         # TanStack Query provider
 │   ├── app-sidebar.tsx            # Navigation sidebar
 │   ├── data-table.tsx             # Advanced data table
 │   ├── goal-tracker.tsx           # Goal tracking carousel
 │   ├── transaction-details.tsx    # Transaction drawer
 │   ├── chart-carousel.tsx         # Chart slider
 │   └── line-chart.tsx             # Interactive charts
+├── hooks/
+│   ├── use-queries.ts             # TanStack Query hooks (accounts, transactions, goals)
+│   └── use-mobile.ts              # Mobile detection hook
 ├── lib/
 │   ├── db.ts                      # Mock database & data generation
 │   └── utils.ts                   # Utility functions
@@ -327,6 +348,129 @@ npm start
 
 ---
 
+## 🔧 TanStack Query Integration
+
+### Architecture
+
+The application uses TanStack Query (React Query) for all data fetching and caching. This provides automatic background updates, intelligent caching, and optimized network usage.
+
+### Custom Query Hooks
+
+Located in `hooks/use-queries.ts`, the application provides three main query hooks:
+
+#### 1. `useAccounts()`
+Fetches all user accounts with automatic caching.
+
+```typescript
+import { useAccounts } from "@/hooks/use-queries";
+
+function MyComponent() {
+  const { data: accounts = [], isLoading, isError } = useAccounts();
+
+  if (isLoading) return <Skeleton />;
+  if (isError) return <ErrorMessage />;
+
+  return <AccountsList accounts={accounts} />;
+}
+```
+
+**Cache Key**: `["accounts"]`
+**Behavior**: Data cached indefinitely, refetches on mount if stale (>1 minute)
+
+#### 2. `useTransactions(startDate, endDate)`
+Fetches transactions within a specified date range.
+
+```typescript
+import { useTransactions } from "@/hooks/use-queries";
+
+function TransactionsComponent() {
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  const {
+    data: transactions = [],
+    isLoading
+  } = useTransactions(oneYearAgo, new Date());
+
+  // Client-side filtering for instant date range changes
+  const filtered = transactions.filter(t => /* filter logic */);
+
+  return <TransactionTable data={filtered} />;
+}
+```
+
+**Cache Key**: `["transactions", startDate.toISOString(), endDate.toISOString()]`
+**Behavior**: Only fetches when dates are provided, automatically refetches if date range changes
+
+#### 3. `useGoals(startDate, endDate)`
+Fetches financial goals within a date range.
+
+```typescript
+import { useGoals } from "@/hooks/use-queries";
+
+function GoalsComponent() {
+  const { data: goals = [], isLoading } = useGoals(startDate, endDate);
+
+  return <GoalTracker goals={goals} />;
+}
+```
+
+**Cache Key**: `["goals", startDate.toISOString(), endDate.toISOString()]`
+**Behavior**: Similar to transactions, with date-based cache invalidation
+
+### Query Configuration
+
+The global QueryClient configuration (in `components/query-provider.tsx`):
+
+```typescript
+{
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,        // 1 minute - data is fresh for 1 min
+      gcTime: 5 * 60 * 1000,       // 5 minutes - cache cleanup after 5 min
+      refetchOnWindowFocus: false, // Don't refetch when window regains focus
+      retry: 1,                    // Retry failed requests once
+    },
+  },
+}
+```
+
+### Benefits in Action
+
+1. **Shared Cache**: Navigate between Overview and Transactions pages - accounts load instantly from cache
+2. **Smart Updates**: Data refreshes in the background when it becomes stale
+3. **Loading States**: Built-in `isLoading` state for skeleton screens
+4. **Error Handling**: Automatic retry logic with `isError` state
+5. **Performance**: Dramatically reduced API calls - from 6+ calls to 1-2 calls per page load
+
+### Adding New Queries
+
+To add a new query hook:
+
+1. Define the hook in `hooks/use-queries.ts`:
+
+```typescript
+export function useCategories() {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      const data = await res.json();
+      return data as Category[];
+    },
+  });
+}
+```
+
+2. Use it in your component:
+
+```typescript
+const { data: categories = [], isLoading } = useCategories();
+```
+
+---
+
 ## 🔮 Future Enhancements
 
 - [ ] User authentication & multi-user support
@@ -375,8 +519,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Radix UI** - For accessible primitives
 - **Vercel** - For Next.js framework
 - **Tailwind Labs** - For Tailwind CSS
+- **TanStack** - For React Query (TanStack Query)
 - **Recharts** - For data visualization
 - **Lucide** - For the icon system
+- **Tabler** - For additional icons
 
 ---
 

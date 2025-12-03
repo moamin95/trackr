@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cookies } from "next/headers";
 
@@ -39,13 +40,15 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange>
-          <SidebarProvider defaultOpen={defaultOpen}>
-            <div className="flex h-full w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-y-auto">{children}</main>
-            </div>
-          </SidebarProvider>
-          <Toaster position="top-center" />
+          <QueryProvider>
+            <SidebarProvider defaultOpen={defaultOpen}>
+              <div className="flex h-full w-full">
+                <AppSidebar />
+                <main className="flex-1 overflow-y-auto">{children}</main>
+              </div>
+            </SidebarProvider>
+            <Toaster position="top-center" />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
